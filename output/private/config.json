@@ -1,1 +1,0 @@
-{"credentials":[{"id":"test-auth-key-123456","platform":"baidu","type":"HeaderBearerToken","required":true,"instructionsUrl":"https://www.feishu.com","label":"测试授权","icon":{"light":"","dark":""},"isRequired":true,"authType":"APIKey"}],"hostWhiteList":["127.0.0.1"]}

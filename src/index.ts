@@ -98,28 +98,45 @@ basekit.addField({
     try {
       const host_url = 'http://127.0.0.1:8000/api/script/transcribe';
       
-      // 使用类型断言获取 baseSignature 和 packID
-      const baseSignature = (context as any).baseSignature;
-      const packID = (context as any).packID;
-      
-      console.log('流量标识信息:', {
-        baseSignature,
-        packID
-      });
-      
-      const response = await context.fetch(host_url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-source': 'feishu-sheet',
-          'x-app-id': 'sheet-api',
-          'x-user-uuid': 'user-123456',
-          // 'x-user-nickname': '晓山',
-          'x-base-signature': baseSignature,
-          'x-pack-id': packID
-        },
-        body: JSON.stringify({ url: urlText }),
-      }, 'test-auth-key-123456');
+      // 获取完整的上下文信息
+        const contextInfo = {
+            baseSignature: (context as any).baseSignature,
+            baseID: (context as any).baseID,
+            logID: (context as any).logID,
+            tableID: (context as any).tableID,
+            packID: (context as any).packID,
+            tenantKey: (context as any).tenantKey,
+            timeZone: (context as any).timeZone,
+            baseOwnerID: (context as any).baseOwnerID
+        };
+
+        console.log('飞书捷径完整上下文信息:', contextInfo);
+        
+        const response = await context.fetch(host_url, {
+            method: 'POST',
+            headers: {
+            'Content-Type': 'application/json',
+            'x-source': 'feishu-sheet',
+            'x-app-id': 'sheet-api',
+            'x-user-uuid': 'user-123456',
+            // 可选的用户昵称
+            // 'x-user-nickname': '晓山',
+            
+            // 添加所有上下文信息到请求头
+            'x-base-signature': contextInfo.baseSignature || '',
+            'x-base-id': contextInfo.baseID || '',
+            'x-log-id': contextInfo.logID || '',
+            'x-table-id': contextInfo.tableID || '',
+            'x-pack-id': contextInfo.packID || '',
+            'x-tenant-key': contextInfo.tenantKey || '',
+            'x-time-zone': contextInfo.timeZone || '',
+            'x-base-owner-id': contextInfo.baseOwnerID || ''
+            },
+            body: JSON.stringify({ 
+            url: urlText,
+            context: contextInfo  // 可选：将完整上下文信息作为请求体的一部分
+            }),
+        }, 'test-auth-key-123456');
       
       const res = await response.json();
       console.log('API响应:', res);
