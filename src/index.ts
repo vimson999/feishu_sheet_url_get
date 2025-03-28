@@ -21,6 +21,7 @@ basekit.addField({
       }
     },
   ],
+  
   // 定义捷径的返回结果类型
   resultType: {
     type: FieldType.Object,
@@ -33,20 +34,76 @@ basekit.addField({
           key: 'id',
           isGroupByKey: true,
           type: FieldType.Text,
-          title: 'id',
+          title: 'ID',
           hidden: true,
-        },
-        {
-          key: 'content',
-          type: FieldType.Text,
-          title: '文案',
-          primary: true,
         },
         {
           key: 'title',
           type: FieldType.Text,
           title: '标题',
+          primary: true,
         },
+        {
+          key: 'authorName',
+          type: FieldType.Text,
+          title: '作者',
+        },
+
+        {
+          key: 'description',
+          type: FieldType.Text,
+          title: '正文',
+        },
+        {
+          key: 'publishTime',
+          type: FieldType.DateTime,
+          title: '发布时间',
+        },
+        {
+          key: 'playCount',
+          type: FieldType.Number,
+          title: '播放数',
+        },
+        {
+          key: 'likeCount',
+          type: FieldType.Number,
+          title: '点赞数',
+        },
+        {
+          key: 'collectCount',
+          type: FieldType.Number,
+          title: '收藏数',
+        },
+        {
+          key: 'shareCount',
+          type: FieldType.Number,
+          title: '转发数',
+        },
+        {
+          key: 'commentCount',
+          type: FieldType.Number,
+          title: '评论数',
+        },
+        {
+          key: 'tags',
+          type: FieldType.Text,
+          title: '标签',
+        },
+        {
+          key: 'coverUrl',
+          type: FieldType.Text,
+          title: '封面地址',
+        },
+        {
+          key: 'videoUrl',
+          type: FieldType.Text,
+          title: '视频下载地址',
+        },
+        {
+          key: 'content',
+          type: FieldType.Text,
+          title: '文案',
+        }
       ],
     },
   },
@@ -65,14 +122,26 @@ basekit.addField({
     }
   ],
   execute: async (formItemParams, context) => {
+    /** 为方便查看日志，使用此方法替代console.log */
+    function debugLog(arg: any) {
+      console.log(JSON.stringify({
+        formItemParams,
+        context,
+        arg
+      }))
+    }
+
     // 获取字段值时需要正确处理字段结构
     const urlField = formItemParams.url;
+    // 使用默认参数值，而不是从表单获取
+    const extractText = true;  // 默认提取文案
+    const includeComments = false;  // 默认不包含评论
     
     // 检查字段存在性
     if (!urlField || !urlField.length) {
       return {
         code: FieldCode.ConfigError,
-        msg: '请先选择视频地址字段',
+        msg: '请先选择媒体链接字段',
       };
     }
     
@@ -96,59 +165,87 @@ basekit.addField({
     console.log('从字段中提取的URL:', urlText);
 
     try {
-      const host_url = 'http://127.0.0.1:8000/api/script/transcribe';
+      // 切换到新的媒体提取API
+      const host_url = 'http://127.0.0.1:8000/api/media/extract';
       
       // 获取完整的上下文信息
-        const contextInfo = {
-            baseSignature: (context as any).baseSignature,
-            baseID: (context as any).baseID,
-            logID: (context as any).logID,
-            tableID: (context as any).tableID,
-            packID: (context as any).packID,
-            tenantKey: (context as any).tenantKey,
-            timeZone: (context as any).timeZone,
-            baseOwnerID: (context as any).baseOwnerID
-        };
+      const contextInfo = {
+        baseSignature: (context as any).baseSignature,
+        baseID: (context as any).baseID,
+        logID: (context as any).logID,
+        tableID: (context as any).tableID,
+        packID: (context as any).packID,
+        tenantKey: (context as any).tenantKey,
+        timeZone: (context as any).timeZone,
+        baseOwnerID: (context as any).baseOwnerID
+      };
 
-        console.log('飞书捷径完整上下文信息:', contextInfo);
+      console.log('飞书捷径完整上下文信息:', contextInfo);
         
-        const response = await context.fetch(host_url, {
-            method: 'POST',
-            headers: {
-            'Content-Type': 'application/json',
-            'x-source': 'feishu-sheet',
-            'x-app-id': 'sheet-api',
-            'x-user-uuid': 'user-123456',
-            // 可选的用户昵称
-            // 'x-user-nickname': '晓山',
-            
-            // 添加所有上下文信息到请求头
-            'x-base-signature': contextInfo.baseSignature || '',
-            'x-base-id': contextInfo.baseID || '',
-            'x-log-id': contextInfo.logID || '',
-            'x-table-id': contextInfo.tableID || '',
-            'x-pack-id': contextInfo.packID || '',
-            'x-tenant-key': contextInfo.tenantKey || '',
-            'x-time-zone': contextInfo.timeZone || '',
-            'x-base-owner-id': contextInfo.baseOwnerID || ''
-            },
-            body: JSON.stringify({ 
-            url: urlText,
-            context: contextInfo  // 可选：将完整上下文信息作为请求体的一部分
-            }),
-        }, 'test-auth-key-123456');
+      const response = await context.fetch(host_url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-source': 'feishu-sheet',
+          'x-app-id': 'sheet-api',
+          'x-user-uuid': 'user-123456',
+          // 可选的用户昵称
+          // 'x-user-nickname': '用户昵称',
+          
+          // 添加所有上下文信息到请求头
+          'x-base-signature': contextInfo.baseSignature || '',
+          'x-base-id': contextInfo.baseID || '',
+          'x-log-id': contextInfo.logID || '',
+          'x-table-id': contextInfo.tableID || '',
+          'x-pack-id': contextInfo.packID || '',
+          'x-tenant-key': contextInfo.tenantKey || '',
+          'x-time-zone': contextInfo.timeZone || '',
+          'x-base-owner-id': contextInfo.baseOwnerID || ''
+        },
+        body: JSON.stringify({ 
+          url: urlText,
+          extract_text: extractText,
+          include_comments: includeComments,
+          context: contextInfo  // 可选：将完整上下文信息作为请求体的一部分
+        }),
+      }, 'test-auth-key-123456');
       
       const res = await response.json();
       console.log('API响应:', res);
+      /** 为方便查看日志，使用此方法替代console.log */
+    function debugLog(arg: any) {
+      console.log(JSON.stringify({
+        res
+      }))
+    }
 
       // 检查响应是否成功，并从正确的路径提取数据
       if (res.code === 200 && res.data) {
+        const mediaData = res.data;
+        
+        // 处理标签列表，转换为逗号分隔的字符串
+        let tagsStr = '';
+        if (mediaData.tags && Array.isArray(mediaData.tags)) {
+          tagsStr = mediaData.tags.join(', ');
+        }
+        
         return {
           code: FieldCode.Success,
           data: {
-            id: `${Date.now()}`,
-            content: res.data.text || '无内容',
-            title: res.data.title || '无标题',
+            id: mediaData.video_id || `${Date.now()}`,
+            title: mediaData.title || '无标题',
+            authorName: mediaData.author?.nickname || '未知作者',
+            publishTime: mediaData.publish_time || new Date().toISOString(),
+            playCount: mediaData.statistics?.play_count || 0,
+            likeCount: mediaData.statistics?.like_count || 0,
+            collectCount: mediaData.statistics?.collect_count || 0,
+            shareCount: mediaData.statistics?.share_count || 0,
+            commentCount: mediaData.statistics?.comment_count || 0,
+            tags: tagsStr,
+            coverUrl: mediaData.media?.cover_url || '',
+            videoUrl: mediaData.media?.video_url || '',
+            content: mediaData.content || '无内容',
+            description: mediaData.description || '',
           },
         };
       } else {
