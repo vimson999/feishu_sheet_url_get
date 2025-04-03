@@ -54,16 +54,16 @@ basekit.addField({
           type: FieldType.Text,
           title: '正文',
         },
-        {
-          key: 'publishTime',
-          type: FieldType.DateTime,
-          title: '发布时间',
-        },
-        {
-          key: 'playCount',
-          type: FieldType.Number,
-          title: '播放数',
-        },
+        // {
+        //   key: 'publishTime',
+        //   type: FieldType.DateTime,
+        //   title: '发布时间',
+        // },
+        // {
+        //   key: 'playCount',
+        //   type: FieldType.Number,
+        //   title: '播放数',
+        // },
         {
           key: 'likeCount',
           type: FieldType.Number,
@@ -187,31 +187,33 @@ basekit.addField({
         headers: {
           'Content-Type': 'application/json',
           'x-source': 'feishu-sheet',
-          'x-app-id': 'sheet-api',
-          'x-user-uuid': 'user-123456',
+          'x-app-id': contextInfo.packID || 'get-info-by-url',
+          'x-user-uuid': contextInfo.tenantKey || 'user-123456',
           // 可选的用户昵称
           // 'x-user-nickname': '用户昵称',
-          
           // 添加所有上下文信息到请求头
           'x-base-signature': contextInfo.baseSignature || '',
           'x-base-id': contextInfo.baseID || '',
           'x-log-id': contextInfo.logID || '',
           'x-table-id': contextInfo.tableID || '',
-          'x-pack-id': contextInfo.packID || '',
-          'x-tenant-key': contextInfo.tenantKey || '',
+          // 'x-pack-id': contextInfo.packID || '',
+          // 'x-tenant-key': contextInfo.tenantKey || '',
           'x-time-zone': contextInfo.timeZone || '',
           'x-base-owner-id': contextInfo.baseOwnerID || ''
         },
+
         body: JSON.stringify({ 
           url: urlText,
           extract_text: extractText,
           include_comments: includeComments,
           context: contextInfo  // 可选：将完整上下文信息作为请求体的一部分
         }),
-      }, 'test-auth-key-123456');
+      }, 'd9fed99f5149867b1271170492f592b088ea3d68c97dc8edb7d5c46ebe16f484');
       
+
       const res = await response.json();
       console.log('API响应:', res);
+      
       /** 为方便查看日志，使用此方法替代console.log */
     function debugLog(arg: any) {
       console.log(JSON.stringify({
