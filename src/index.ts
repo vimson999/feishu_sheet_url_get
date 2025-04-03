@@ -109,12 +109,12 @@ basekit.addField({
   },
   authorizations: [
     {
-      id: 'test-auth-key-123456',// 授权的id，用于context.fetch第三个参数以区分该请求使用哪个授权
+      id: 'api-key',// 授权的id，用于context.fetch第三个参数以区分该请求使用哪个授权
       platform: 'baidu',// 需要与之授权的平台,比如baidu(必须要是已经支持的三方凭证,不可随便填写,如果想要支持更多的凭证，请填写申请表单)
       type: AuthorizationType.HeaderBearerToken,
       required: true,// 设置为选填，用户如果填了授权信息，请求中则会携带授权信息，否则不带授权信息
       instructionsUrl: "https://www.feishu.com",// 帮助链接，告诉使用者如何填写这个apikey
-      label: '测试授权',
+      label: '请填写 api key',
       icon: {
         light: '',
         dark: ''
@@ -166,7 +166,7 @@ basekit.addField({
 
     try {
       // 切换到新的媒体提取API
-      const host_url = 'http://127.0.0.1:8000/api/media/extract';
+      const host_url = 'http://127.0.0.1:8083/api/media/extract';
       
       // 获取完整的上下文信息
       const contextInfo = {
@@ -208,7 +208,7 @@ basekit.addField({
           include_comments: includeComments,
           context: contextInfo  // 可选：将完整上下文信息作为请求体的一部分
         }),
-      }, 'd9fed99f5149867b1271170492f592b088ea3d68c97dc8edb7d5c46ebe16f484');
+      }, 'api-key');
       
 
       const res = await response.json();
