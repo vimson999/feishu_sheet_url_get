@@ -2,7 +2,8 @@ import { basekit, FieldType, field, FieldComponent, FieldCode,AuthorizationType 
 const { t } = field;
 
 // 通过addDomainList添加请求接口的域名
-basekit.addDomainList(['127.0.0.1']);
+// basekit.addDomainList(['www.xiaoshanqing.tech']);
+basekit.addDomainList(['121.4.126.31']);
 
 basekit.addField({
   options: {
@@ -166,7 +167,9 @@ basekit.addField({
 
     try {
       // 切换到新的媒体提取API
-      const host_url = 'http://127.0.0.1:8083/api/media/extract';
+      const host_url = 'http://121.4.126.31/api/media/extract';
+      // const host_url = 'https://www.xiaoshanqing.tech/api/media/extract';
+
       
       // 获取完整的上下文信息
       const contextInfo = {
