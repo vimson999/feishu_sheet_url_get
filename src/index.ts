@@ -1,13 +1,22 @@
-import { basekit, FieldType, field, FieldComponent, FieldCode,AuthorizationType } from '@lark-opdev/block-basekit-server-api';
+import { basekit, FieldType, field, FieldComponent, FieldCode, AuthorizationType } from '@lark-opdev/block-basekit-server-api';
 const { t } = field;
 
-// 通过addDomainList添加请求接口的域名
+// --- Domain Whitelist (Keep commented lines for debugging) ---
 // basekit.addDomainList(['www.xiaoshanqing.tech']);
-basekit.addDomainList(['121.4.126.31']);
+// basekit.addDomainList(['121.4.126.31']);
+basekit.addDomainList(['127.0.0.1']); // Currently active for local testing
 
+// --- Helper Functions ---
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+function logInfo(message, data = {}) {
+  // Simple console log for debugging within Basekit environment
+  console.log(JSON.stringify({ message, ...data }, null, 2));
+}
+
+// --- Basekit Field Definition ---
 basekit.addField({
   options: {
-    disableAutoUpdate: true, // 关闭自动更新
+    disableAutoUpdate: true, // Manual trigger only
   },
   formItems: [
     {
@@ -15,255 +24,282 @@ basekit.addField({
       label: '视频地址',
       component: FieldComponent.FieldSelect,
       props: {
-        supportType: [FieldType.Text],
+        supportType: [FieldType.Text], // Expect Text or URL field types
       },
       validator: {
         required: true,
       }
     },
   ],
-  
-  // 定义捷径的返回结果类型
   resultType: {
     type: FieldType.Object,
     extra: {
       icon: {
         light: 'https://lf3-static.bytednsdoc.com/obj/eden-cn/eqgeh7upeubqnulog/chatbot.svg',
+        dark: 'https://lf3-static.bytednsdoc.com/obj/eden-cn/eqgeh7upeubqnulog/chatbot.svg', // Provide dark icon if available
       },
       properties: [
-        {
-          key: 'id',
-          isGroupByKey: true,
-          type: FieldType.Text,
-          title: 'ID',
-          hidden: true,
-        },
-        {
-          key: 'title',
-          type: FieldType.Text,
-          title: '标题',
-          primary: true,
-        },
-        {
-          key: 'authorName',
-          type: FieldType.Text,
-          title: '作者',
-        },
-
-        {
-          key: 'description',
-          type: FieldType.Text,
-          title: '正文',
-        },
-        // {
-        //   key: 'publishTime',
-        //   type: FieldType.DateTime,
-        //   title: '发布时间',
-        // },
-        // {
-        //   key: 'playCount',
-        //   type: FieldType.Number,
-        //   title: '播放数',
-        // },
-        {
-          key: 'likeCount',
-          type: FieldType.Number,
-          title: '点赞数',
-        },
-        {
-          key: 'collectCount',
-          type: FieldType.Number,
-          title: '收藏数',
-        },
-        {
-          key: 'shareCount',
-          type: FieldType.Number,
-          title: '转发数',
-        },
-        {
-          key: 'commentCount',
-          type: FieldType.Number,
-          title: '评论数',
-        },
-        {
-          key: 'tags',
-          type: FieldType.Text,
-          title: '标签',
-        },
-        {
-          key: 'coverUrl',
-          type: FieldType.Text,
-          title: '封面地址',
-        },
-        {
-          key: 'videoUrl',
-          type: FieldType.Text,
-          title: '视频下载地址',
-        },
-        {
-          key: 'content',
-          type: FieldType.Text,
-          title: '文案',
-        }
+        // Keep result properties as defined before, ensure they match the final data structure
+        { key: 'id', isGroupByKey: true, type: FieldType.Text, title: 'ID', hidden: true },
+        { key: 'title', type: FieldType.Text, title: '标题', primary: true },
+        { key: 'authorName', type: FieldType.Text, title: '作者' },
+        { key: 'description', type: FieldType.Text, title: '描述' },
+        { key: 'publishTime', type: FieldType.DateTime, title: '发布时间' },
+        { key: 'likeCount', type: FieldType.Number, title: '点赞数' },
+        { key: 'collectCount', type: FieldType.Number, title: '收藏数' },
+        { key: 'shareCount', type: FieldType.Number, title: '转发数' },
+        { key: 'commentCount', type: FieldType.Number, title: '评论数' },
+        { key: 'tags', type: FieldType.Text, title: '标签' },
+        { key: 'coverUrl', type: FieldType.Text, title: '封面地址' },
+        { key: 'videoUrl', type: FieldType.Text, title: '视频下载地址' },
+        { key: 'content', type: FieldType.Text, title: '文案' }, // Included extracted text/content
       ],
     },
   },
-  authorizations: [
+  authorizations: [ // Keep authorization as defined before
     {
-      id: 'api-key',// 授权的id，用于context.fetch第三个参数以区分该请求使用哪个授权
-      platform: 'baidu',// 需要与之授权的平台,比如baidu(必须要是已经支持的三方凭证,不可随便填写,如果想要支持更多的凭证，请填写申请表单)
+      id: 'api-key',
+      platform: 'baidu', // Or other identifier
       type: AuthorizationType.HeaderBearerToken,
-      required: true,// 设置为选填，用户如果填了授权信息，请求中则会携带授权信息，否则不带授权信息
-      instructionsUrl: "https://www.feishu.com",// 帮助链接，告诉使用者如何填写这个apikey
-      label: '请填写 api key',
-      icon: {
-        light: '',
-        dark: ''
-      }
+      required: true,
+      instructionsUrl: "https://www.feishu.com", // Replace with actual help link
+      label: '请填写 API Key',
+      icon: { light: '', dark: '' }
     }
   ],
   execute: async (formItemParams, context) => {
-    /** 为方便查看日志，使用此方法替代console.log */
-    function debugLog(arg: any) {
-      console.log(JSON.stringify({
-        formItemParams,
-        context,
-        arg
-      }))
-    }
+    logInfo('Starting execution', { formItemParams });
 
-    // 获取字段值时需要正确处理字段结构
+    // --- 1. Get Input URL and Options ---
     const urlField = formItemParams.url;
-    // 使用默认参数值，而不是从表单获取
+    // const extractText = false;  // 默认提取文案
     const extractText = true;  // 默认提取文案
-    const includeComments = false;  // 默认不包含评论
-    
-    // 检查字段存在性
+    const includeComments = false; // Still hardcoded, adjust if needed
+
+    logInfo('Execution options', { extractText, includeComments });
+
     if (!urlField || !urlField.length) {
-      return {
-        code: FieldCode.ConfigError,
-        msg: '请先选择媒体链接字段',
-      };
+      return { code: FieldCode.ConfigError, msg: '请先选择包含媒体链接的字段' };
     }
-    
-    // 从文本字段中提取实际的URL文本
+
+    // Extract URL Text (using the robust logic from previous version)
     let urlText = '';
-    for (const item of urlField) {
-      if (item.type === 'text') {
-        urlText += item.text;
-      } else if (item.type === 'url') {
-        urlText += item.link;
-      }
-    }
-    
-    if (!urlText) {
-      return {
-        code: FieldCode.ConfigError,
-        msg: '未能从所选字段中提取有效的URL',
-      };
-    }
-
-    console.log('从字段中提取的URL:', urlText);
-
     try {
-      // 切换到新的媒体提取API
-      const host_url = 'http://121.4.126.31/api/media/extract';
-      // const host_url = 'https://www.xiaoshanqing.tech/api/media/extract';
+        const firstItem = urlField[0];
+         if (firstItem.type === 'text') {
+            urlText = firstItem.text;
+        } else if (firstItem.type === 'url') {
+            urlText = firstItem.link;
+        } else if (Array.isArray(firstItem.value)) {
+             const cellValue = firstItem.value[0];
+             if (cellValue?.type === 'text') { // Add null check for cellValue
+                 urlText = cellValue.text;
+             } else if (cellValue?.type === 'url'){
+                 urlText = cellValue.link;
+             }
+        }
+        if (!urlText && typeof firstItem.value === 'string') {
+             urlText = firstItem.value;
+        }
+    } catch (error) {
+      logInfo('Error extracting URL from field', { error: error.message, urlField });
+      return { code: FieldCode.ConfigError, msg: `无法从字段中提取有效的URL: ${error.message}` };
+    }
 
-      
-      // 获取完整的上下文信息
-      const contextInfo = {
-        baseSignature: (context as any).baseSignature,
-        baseID: (context as any).baseID,
-        logID: (context as any).logID,
-        tableID: (context as any).tableID,
-        packID: (context as any).packID,
-        tenantKey: (context as any).tenantKey,
-        timeZone: (context as any).timeZone,
-        baseOwnerID: (context as any).baseOwnerID
-      };
 
-      console.log('飞书捷径完整上下文信息:', contextInfo);
-        
-      const response = await context.fetch(host_url, {
+    if (!urlText || !urlText.trim()) {
+      logInfo('Extracted URL is empty');
+      return { code: FieldCode.ConfigError, msg: '未能从所选字段中提取有效的 URL 文本' };
+    }
+    logInfo('Extracted URL', { urlText });
+
+    // --- 2. Prepare API Request Details ---
+    // Use the currently active domain from the whitelist
+    const activeDomain = 'http://127.0.0.1:8083'; // Fallback just in case
+    const host_base = activeDomain.startsWith('http') ? activeDomain : `http://${activeDomain}`; // Ensure protocol
+    const extract_api_path = '/api/media/extract';
+    const status_api_path_base = '/api/media/extract/status/'; // Base path for status
+
+    logInfo('API base', { host_base });
+
+    // Context Info and Headers (keep as before)
+    const contextInfo = {
+      baseSignature: (context as any).baseSignature,
+      baseID: (context as any).baseID,
+      logID: (context as any).logID,
+      tableID: (context as any).tableID,
+      packID: (context as any).packID,
+      tenantKey: (context as any).tenantKey,
+      timeZone: (context as any).timeZone,
+      baseOwnerID: (context as any).baseOwnerID
+    };
+    const headers = {
+      'Content-Type': 'application/json',
+      'x-source': 'feishu-sheet',
+      'x-app-id': contextInfo.packID || 'get-info-by-url',
+      'x-user-uuid': contextInfo.tenantKey || 'user-123456',
+      // 可选的用户昵称
+      // 'x-user-nickname': '用户昵称',
+      // 添加所有上下文信息到请求头
+      'x-base-signature': contextInfo.baseSignature || '',
+      'x-base-id': contextInfo.baseID || '',
+      'x-log-id': contextInfo.logID || '',
+      'x-table-id': contextInfo.tableID || '',
+      // 'x-pack-id': contextInfo.packID || '',
+      // 'x-tenant-key': contextInfo.tenantKey || '',
+      'x-time-zone': contextInfo.timeZone || '',
+      'x-base-owner-id': contextInfo.baseOwnerID || ''
+    };
+
+    // x_trace_key
+    let mediaData = null; // To store the final result data
+    try {
+      // --- 3. Call Initial Extract API (POST) ---
+      logInfo('Calling initial extract API (POST)', { extractText });
+      const response = await context.fetch(`${host_base}${extract_api_path}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-source': 'feishu-sheet',
-          'x-app-id': contextInfo.packID || 'get-info-by-url',
-          'x-user-uuid': contextInfo.tenantKey || 'user-123456',
-          // 可选的用户昵称
-          // 'x-user-nickname': '用户昵称',
-          // 添加所有上下文信息到请求头
-          'x-base-signature': contextInfo.baseSignature || '',
-          'x-base-id': contextInfo.baseID || '',
-          'x-log-id': contextInfo.logID || '',
-          'x-table-id': contextInfo.tableID || '',
-          // 'x-pack-id': contextInfo.packID || '',
-          // 'x-tenant-key': contextInfo.tenantKey || '',
-          'x-time-zone': contextInfo.timeZone || '',
-          'x-base-owner-id': contextInfo.baseOwnerID || ''
-        },
-
-        body: JSON.stringify({ 
+        headers: headers,
+        body: JSON.stringify({
           url: urlText,
-          extract_text: extractText,
+          extract_text: extractText, // Pass the flag to the API
           include_comments: includeComments,
-          context: contextInfo  // 可选：将完整上下文信息作为请求体的一部分
+          context: contextInfo // Optional
         }),
       }, 'api-key');
-      
+
+      if (!response.ok) {
+          const errorText = await response.text();
+          logInfo('Initial API call failed (non-OK status)', { status: response.status, text: errorText });
+          return { code: FieldCode.Error, msg: `API 请求失败: ${response.status} ${errorText}` };
+      }
 
       const res = await response.json();
-      console.log('API响应:', res);
-      
-      /** 为方便查看日志，使用此方法替代console.log */
-    function debugLog(arg: any) {
-      console.log(JSON.stringify({
-        res
-      }))
-    }
+      logInfo('Initial API response received', { res });
 
-      // 检查响应是否成功，并从正确的路径提取数据
-      if (res.code === 200 && res.data) {
-        const mediaData = res.data;
-        
-        // 处理标签列表，转换为逗号分隔的字符串
-        let tagsStr = '';
-        if (mediaData.tags && Array.isArray(mediaData.tags)) {
-          tagsStr = mediaData.tags.join(', ');
+      // --- 4. Handle Response: Poll or Use Direct Data ---
+      if (extractText) {
+        // --- 4a. Scenario: Polling Required ---
+        logInfo('Polling scenario: extractText is true');
+        if (res.code === 202 && res.task_id) {
+          const taskId = res.task_id;
+          const root_trace_key = res.root_trace_key; //
+          logInfo('Received task ID, starting polling', { taskId });
+
+          // Polling Logic (copied from previous version)
+          // const maxAttempts = 60;//
+          // const pollInterval = 10000; // 10 seconds
+
+          const maxAttempts = 40;
+          const pollInterval = 20 * 1000; // 10 seconds
+          let attempts = 0;
+          let taskComplete = false;
+          let finalDataFromPolling = null; // Use a separate variable inside the polling scope
+
+          headers['x-root-trace-key'] = root_trace_key;
+
+          while (attempts < maxAttempts && !taskComplete) {
+            attempts++;
+            logInfo(`Polling status API, attempt ${attempts}/${maxAttempts}`);
+            if (attempts > 1) await sleep(pollInterval);
+
+            try {
+              const statusResponse = await context.fetch(`${host_base}${status_api_path_base}${taskId}`, {
+                method: 'GET',
+                headers: headers, // Reuse headers or create specific ones if needed
+              }, 'api-key');
+
+              if (!statusResponse.ok) {
+                  const errorText = await statusResponse.text();
+                  logInfo(`Status API call failed (attempt ${attempts}, non-OK status)`, { status: statusResponse.status, text: errorText });
+                  if (attempts === maxAttempts) throw new Error(`状态查询失败 (尝试 ${attempts} 次): ${statusResponse.status} ${errorText}`);
+                  continue; // Try polling again
+              }
+
+              const statusRes = await statusResponse.json();
+              logInfo(`Status API response (attempt ${attempts})`, { statusRes });
+
+              // Adjust condition based on your API's success response structure
+              if (statusRes.code === 200 && statusRes.data && statusRes.status === 'completed') {
+                  finalDataFromPolling = statusRes.data;
+                  taskComplete = true;
+                  logInfo('Task completed successfully via polling!');
+              } else if ( ( statusRes.status === 'running' || statusRes.code !== 200 ) && attempts < maxAttempts) {
+                  logInfo(`Task still processing (attempt ${attempts})`);
+              } else { // Task failed or timed out within API, or unexpected response
+                  logInfo(`Task failed or polling timed out (attempt ${attempts})`, { statusRes });
+                  throw new Error(`获取结果失败: ${statusRes.message || '任务处理超时或失败'}`);
+              }
+            } catch (pollError) {
+                 logInfo(`Error during status poll (attempt ${attempts})`, { error: pollError.message });
+                 if (attempts === maxAttempts) throw pollError; // Rethrow if max attempts reached
+                 // Optionally add delay before retrying after an error
+                 await sleep(1000);
+            }
+          } // End while loop
+
+          if (!taskComplete || !finalDataFromPolling) {
+             throw new Error('无法在规定时间内获取到媒体信息 (Polling timed out or failed)');
+          }
+          mediaData = finalDataFromPolling; // Assign successful polling result
+
+        } else { // Initial request failed or didn't return task_id when expected
+            logInfo('Error: Polling required but task_id not received or initial error', { res });
+            throw new Error(`API 错误 (需要轮询但未获取 task_id): ${res.message || '无效的初始响应'}`);
         }
-        
-        return {
-          code: FieldCode.Success,
-          data: {
-            id: mediaData.video_id || `${Date.now()}`,
-            title: mediaData.title || '无标题',
-            authorName: mediaData.author?.nickname || '未知作者',
-            publishTime: mediaData.publish_time || new Date().toISOString(),
-            playCount: mediaData.statistics?.play_count || 0,
-            likeCount: mediaData.statistics?.like_count || 0,
-            collectCount: mediaData.statistics?.collect_count || 0,
-            shareCount: mediaData.statistics?.share_count || 0,
-            commentCount: mediaData.statistics?.comment_count || 0,
-            tags: tagsStr,
-            coverUrl: mediaData.media?.cover_url || '',
-            videoUrl: mediaData.media?.video_url || '',
-            content: mediaData.content || '无内容',
-            description: mediaData.description || '',
-          },
-        };
       } else {
-        return {
-          code: FieldCode.Error,
-          msg: `API响应错误: ${res.message || '未知错误'}`,
-        };
+        // --- 4b. Scenario: Direct Data Expected ---
+        logInfo('Direct data scenario: extractText is false');
+        if (res.code === 200 && res.data) {
+          logInfo('Received direct data successfully', { data: res.data });
+          mediaData = res.data; // Assign direct data
+        } else { // Direct request failed or didn't return data when expected
+          logInfo('Error: Expected direct data but not received or API error', { res });
+          throw new Error(`API 错误 (预期直接数据): ${res.message || '无效响应或缺少数据'}`);
+        }
       }
+
+      // --- 5. Process Final Data (Common Logic) ---
+      if (!mediaData) {
+         // This case should ideally be prevented by the logic above throwing errors
+         logInfo('Critical Error: mediaData is null after processing branches');
+         throw new Error('未能通过任何方式检索到媒体数据。');
+      }
+
+      logInfo('Processing final mediaData', { mediaData });
+      let tagsStr = '';
+      if (mediaData.tags && Array.isArray(mediaData.tags)) {
+        tagsStr = mediaData.tags.join(', ');
+      }
+
+      // Map final mediaData to the resultType structure
+      const result = {
+        id: mediaData.video_id || mediaData.id || `${Date.now()}`, // Use appropriate ID field from API response
+        title: mediaData.title || '无标题',
+        authorName: mediaData.author?.nickname || mediaData.author_name || '未知作者', // Check API response fields
+        description: mediaData.description || '',
+        publishTime: mediaData.publish_time ? new Date(mediaData.publish_time).toISOString() : null, // Handle potential time formats
+        likeCount: mediaData.statistics?.like_count ?? mediaData.like_count ?? 0, // Check alternative field names
+        collectCount: mediaData.statistics?.collect_count ?? mediaData.collect_count ?? 0,
+        shareCount: mediaData.statistics?.share_count ?? mediaData.share_count ?? 0,
+        commentCount: mediaData.statistics?.comment_count ?? mediaData.comment_count ?? 0,
+        tags: tagsStr,
+        coverUrl: mediaData.media?.cover_url ?? mediaData.cover_url ?? '',
+        videoUrl: mediaData.media?.video_url ?? mediaData.video_url ?? '',
+        content: mediaData.content || '', //文案字段
+      };
+      logInfo('Final result prepared', { result });
+
+      return {
+        code: FieldCode.Success,
+        data: result,
+      };
+
     } catch (e) {
-      console.error('请求失败:', e);
+      // Catch errors from fetch, json parsing, polling logic, or thrown errors
+      logInfo('Execution failed with error', { error: e.message, stack: e.stack });
       return {
         code: FieldCode.Error,
-        msg: `请求失败: ${e.message}`
+        msg: `执行捷径时出错: ${e.message}` // Return the error message
       };
     }
   },

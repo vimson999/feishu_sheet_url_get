@@ -2,12 +2,20 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const block_basekit_server_api_1 = require("@lark-opdev/block-basekit-server-api");
 const { t } = block_basekit_server_api_1.field;
-// 通过addDomainList添加请求接口的域名
+// --- Domain Whitelist (Keep commented lines for debugging) ---
 // basekit.addDomainList(['www.xiaoshanqing.tech']);
-block_basekit_server_api_1.basekit.addDomainList(['121.4.126.31']);
+// basekit.addDomainList(['121.4.126.31']);
+block_basekit_server_api_1.basekit.addDomainList(['127.0.0.1']); // Currently active for local testing
+// --- Helper Functions ---
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+function logInfo(message, data = {}) {
+    // Simple console log for debugging within Basekit environment
+    console.log(JSON.stringify({ message, ...data }, null, 2));
+}
+// --- Basekit Field Definition ---
 block_basekit_server_api_1.basekit.addField({
     options: {
-        disableAutoUpdate: true, // 关闭自动更新
+        disableAutoUpdate: true, // Manual trigger only
     },
     formItems: [
         {
@@ -15,242 +23,271 @@ block_basekit_server_api_1.basekit.addField({
             label: '视频地址',
             component: block_basekit_server_api_1.FieldComponent.FieldSelect,
             props: {
-                supportType: [block_basekit_server_api_1.FieldType.Text],
+                supportType: [block_basekit_server_api_1.FieldType.Text], // Expect Text or URL field types
             },
             validator: {
                 required: true,
             }
         },
     ],
-    // 定义捷径的返回结果类型
     resultType: {
         type: block_basekit_server_api_1.FieldType.Object,
         extra: {
             icon: {
                 light: 'https://lf3-static.bytednsdoc.com/obj/eden-cn/eqgeh7upeubqnulog/chatbot.svg',
+                dark: 'https://lf3-static.bytednsdoc.com/obj/eden-cn/eqgeh7upeubqnulog/chatbot.svg', // Provide dark icon if available
             },
             properties: [
-                {
-                    key: 'id',
-                    isGroupByKey: true,
-                    type: block_basekit_server_api_1.FieldType.Text,
-                    title: 'ID',
-                    hidden: true,
-                },
-                {
-                    key: 'title',
-                    type: block_basekit_server_api_1.FieldType.Text,
-                    title: '标题',
-                    primary: true,
-                },
-                {
-                    key: 'authorName',
-                    type: block_basekit_server_api_1.FieldType.Text,
-                    title: '作者',
-                },
-                {
-                    key: 'description',
-                    type: block_basekit_server_api_1.FieldType.Text,
-                    title: '正文',
-                },
-                // {
-                //   key: 'publishTime',
-                //   type: FieldType.DateTime,
-                //   title: '发布时间',
-                // },
-                // {
-                //   key: 'playCount',
-                //   type: FieldType.Number,
-                //   title: '播放数',
-                // },
-                {
-                    key: 'likeCount',
-                    type: block_basekit_server_api_1.FieldType.Number,
-                    title: '点赞数',
-                },
-                {
-                    key: 'collectCount',
-                    type: block_basekit_server_api_1.FieldType.Number,
-                    title: '收藏数',
-                },
-                {
-                    key: 'shareCount',
-                    type: block_basekit_server_api_1.FieldType.Number,
-                    title: '转发数',
-                },
-                {
-                    key: 'commentCount',
-                    type: block_basekit_server_api_1.FieldType.Number,
-                    title: '评论数',
-                },
-                {
-                    key: 'tags',
-                    type: block_basekit_server_api_1.FieldType.Text,
-                    title: '标签',
-                },
-                {
-                    key: 'coverUrl',
-                    type: block_basekit_server_api_1.FieldType.Text,
-                    title: '封面地址',
-                },
-                {
-                    key: 'videoUrl',
-                    type: block_basekit_server_api_1.FieldType.Text,
-                    title: '视频下载地址',
-                },
-                {
-                    key: 'content',
-                    type: block_basekit_server_api_1.FieldType.Text,
-                    title: '文案',
-                }
+                // Keep result properties as defined before, ensure they match the final data structure
+                { key: 'id', isGroupByKey: true, type: block_basekit_server_api_1.FieldType.Text, title: 'ID', hidden: true },
+                { key: 'title', type: block_basekit_server_api_1.FieldType.Text, title: '标题', primary: true },
+                { key: 'authorName', type: block_basekit_server_api_1.FieldType.Text, title: '作者' },
+                { key: 'description', type: block_basekit_server_api_1.FieldType.Text, title: '描述' },
+                { key: 'publishTime', type: block_basekit_server_api_1.FieldType.DateTime, title: '发布时间' },
+                { key: 'likeCount', type: block_basekit_server_api_1.FieldType.Number, title: '点赞数' },
+                { key: 'collectCount', type: block_basekit_server_api_1.FieldType.Number, title: '收藏数' },
+                { key: 'shareCount', type: block_basekit_server_api_1.FieldType.Number, title: '转发数' },
+                { key: 'commentCount', type: block_basekit_server_api_1.FieldType.Number, title: '评论数' },
+                { key: 'tags', type: block_basekit_server_api_1.FieldType.Text, title: '标签' },
+                { key: 'coverUrl', type: block_basekit_server_api_1.FieldType.Text, title: '封面地址' },
+                { key: 'videoUrl', type: block_basekit_server_api_1.FieldType.Text, title: '视频下载地址' },
+                { key: 'content', type: block_basekit_server_api_1.FieldType.Text, title: '文案' }, // Included extracted text/content
             ],
         },
     },
     authorizations: [
         {
-            id: 'api-key', // 授权的id，用于context.fetch第三个参数以区分该请求使用哪个授权
-            platform: 'baidu', // 需要与之授权的平台,比如baidu(必须要是已经支持的三方凭证,不可随便填写,如果想要支持更多的凭证，请填写申请表单)
+            id: 'api-key',
+            platform: 'baidu', // Or other identifier
             type: block_basekit_server_api_1.AuthorizationType.HeaderBearerToken,
-            required: true, // 设置为选填，用户如果填了授权信息，请求中则会携带授权信息，否则不带授权信息
-            instructionsUrl: "https://www.feishu.com", // 帮助链接，告诉使用者如何填写这个apikey
-            label: '请填写 api key',
-            icon: {
-                light: '',
-                dark: ''
-            }
+            required: true,
+            instructionsUrl: "https://www.feishu.com", // Replace with actual help link
+            label: '请填写 API Key',
+            icon: { light: '', dark: '' }
         }
     ],
     execute: async (formItemParams, context) => {
-        /** 为方便查看日志，使用此方法替代console.log */
-        function debugLog(arg) {
-            console.log(JSON.stringify({
-                formItemParams,
-                context,
-                arg
-            }));
-        }
-        // 获取字段值时需要正确处理字段结构
+        logInfo('Starting execution', { formItemParams });
+        // --- 1. Get Input URL and Options ---
         const urlField = formItemParams.url;
-        // 使用默认参数值，而不是从表单获取
+        // const extractText = false;  // 默认提取文案
         const extractText = true; // 默认提取文案
-        const includeComments = false; // 默认不包含评论
-        // 检查字段存在性
+        const includeComments = false; // Still hardcoded, adjust if needed
+        logInfo('Execution options', { extractText, includeComments });
         if (!urlField || !urlField.length) {
-            return {
-                code: block_basekit_server_api_1.FieldCode.ConfigError,
-                msg: '请先选择媒体链接字段',
-            };
+            return { code: block_basekit_server_api_1.FieldCode.ConfigError, msg: '请先选择包含媒体链接的字段' };
         }
-        // 从文本字段中提取实际的URL文本
+        // Extract URL Text (using the robust logic from previous version)
         let urlText = '';
-        for (const item of urlField) {
-            if (item.type === 'text') {
-                urlText += item.text;
-            }
-            else if (item.type === 'url') {
-                urlText += item.link;
-            }
-        }
-        if (!urlText) {
-            return {
-                code: block_basekit_server_api_1.FieldCode.ConfigError,
-                msg: '未能从所选字段中提取有效的URL',
-            };
-        }
-        console.log('从字段中提取的URL:', urlText);
         try {
-            // 切换到新的媒体提取API
-            const host_url = 'http://121.4.126.31/api/media/extract';
-            // const host_url = 'https://www.xiaoshanqing.tech/api/media/extract';
-            // 获取完整的上下文信息
-            const contextInfo = {
-                baseSignature: context.baseSignature,
-                baseID: context.baseID,
-                logID: context.logID,
-                tableID: context.tableID,
-                packID: context.packID,
-                tenantKey: context.tenantKey,
-                timeZone: context.timeZone,
-                baseOwnerID: context.baseOwnerID
-            };
-            console.log('飞书捷径完整上下文信息:', contextInfo);
-            const response = await context.fetch(host_url, {
+            const firstItem = urlField[0];
+            if (firstItem.type === 'text') {
+                urlText = firstItem.text;
+            }
+            else if (firstItem.type === 'url') {
+                urlText = firstItem.link;
+            }
+            else if (Array.isArray(firstItem.value)) {
+                const cellValue = firstItem.value[0];
+                if (cellValue?.type === 'text') { // Add null check for cellValue
+                    urlText = cellValue.text;
+                }
+                else if (cellValue?.type === 'url') {
+                    urlText = cellValue.link;
+                }
+            }
+            if (!urlText && typeof firstItem.value === 'string') {
+                urlText = firstItem.value;
+            }
+        }
+        catch (error) {
+            logInfo('Error extracting URL from field', { error: error.message, urlField });
+            return { code: block_basekit_server_api_1.FieldCode.ConfigError, msg: `无法从字段中提取有效的URL: ${error.message}` };
+        }
+        if (!urlText || !urlText.trim()) {
+            logInfo('Extracted URL is empty');
+            return { code: block_basekit_server_api_1.FieldCode.ConfigError, msg: '未能从所选字段中提取有效的 URL 文本' };
+        }
+        logInfo('Extracted URL', { urlText });
+        // --- 2. Prepare API Request Details ---
+        // Use the currently active domain from the whitelist
+        const activeDomain = 'http://127.0.0.1:8083'; // Fallback just in case
+        const host_base = activeDomain.startsWith('http') ? activeDomain : `http://${activeDomain}`; // Ensure protocol
+        const extract_api_path = '/api/media/extract';
+        const status_api_path_base = '/api/media/extract/status/'; // Base path for status
+        logInfo('API base', { host_base });
+        // Context Info and Headers (keep as before)
+        const contextInfo = {
+            baseSignature: context.baseSignature,
+            baseID: context.baseID,
+            logID: context.logID,
+            tableID: context.tableID,
+            packID: context.packID,
+            tenantKey: context.tenantKey,
+            timeZone: context.timeZone,
+            baseOwnerID: context.baseOwnerID
+        };
+        const headers = {
+            'Content-Type': 'application/json',
+            'x-source': 'feishu-sheet',
+            'x-app-id': contextInfo.packID || 'get-info-by-url',
+            'x-user-uuid': contextInfo.tenantKey || 'user-123456',
+            // 可选的用户昵称
+            // 'x-user-nickname': '用户昵称',
+            // 添加所有上下文信息到请求头
+            'x-base-signature': contextInfo.baseSignature || '',
+            'x-base-id': contextInfo.baseID || '',
+            'x-log-id': contextInfo.logID || '',
+            'x-table-id': contextInfo.tableID || '',
+            // 'x-pack-id': contextInfo.packID || '',
+            // 'x-tenant-key': contextInfo.tenantKey || '',
+            'x-time-zone': contextInfo.timeZone || '',
+            'x-base-owner-id': contextInfo.baseOwnerID || ''
+        };
+        // x_trace_key
+        let mediaData = null; // To store the final result data
+        try {
+            // --- 3. Call Initial Extract API (POST) ---
+            logInfo('Calling initial extract API (POST)', { extractText });
+            const response = await context.fetch(`${host_base}${extract_api_path}`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-source': 'feishu-sheet',
-                    'x-app-id': contextInfo.packID || 'get-info-by-url',
-                    'x-user-uuid': contextInfo.tenantKey || 'user-123456',
-                    // 可选的用户昵称
-                    // 'x-user-nickname': '用户昵称',
-                    // 添加所有上下文信息到请求头
-                    'x-base-signature': contextInfo.baseSignature || '',
-                    'x-base-id': contextInfo.baseID || '',
-                    'x-log-id': contextInfo.logID || '',
-                    'x-table-id': contextInfo.tableID || '',
-                    // 'x-pack-id': contextInfo.packID || '',
-                    // 'x-tenant-key': contextInfo.tenantKey || '',
-                    'x-time-zone': contextInfo.timeZone || '',
-                    'x-base-owner-id': contextInfo.baseOwnerID || ''
-                },
+                headers: headers,
                 body: JSON.stringify({
                     url: urlText,
-                    extract_text: extractText,
+                    extract_text: extractText, // Pass the flag to the API
                     include_comments: includeComments,
-                    context: contextInfo // 可选：将完整上下文信息作为请求体的一部分
+                    context: contextInfo // Optional
                 }),
             }, 'api-key');
-            const res = await response.json();
-            console.log('API响应:', res);
-            /** 为方便查看日志，使用此方法替代console.log */
-            function debugLog(arg) {
-                console.log(JSON.stringify({
-                    res
-                }));
+            if (!response.ok) {
+                const errorText = await response.text();
+                logInfo('Initial API call failed (non-OK status)', { status: response.status, text: errorText });
+                return { code: block_basekit_server_api_1.FieldCode.Error, msg: `API 请求失败: ${response.status} ${errorText}` };
             }
-            // 检查响应是否成功，并从正确的路径提取数据
-            if (res.code === 200 && res.data) {
-                const mediaData = res.data;
-                // 处理标签列表，转换为逗号分隔的字符串
-                let tagsStr = '';
-                if (mediaData.tags && Array.isArray(mediaData.tags)) {
-                    tagsStr = mediaData.tags.join(', ');
+            const res = await response.json();
+            logInfo('Initial API response received', { res });
+            // --- 4. Handle Response: Poll or Use Direct Data ---
+            if (extractText) {
+                // --- 4a. Scenario: Polling Required ---
+                logInfo('Polling scenario: extractText is true');
+                if (res.code === 202 && res.task_id) {
+                    const taskId = res.task_id;
+                    const root_trace_key = res.root_trace_key; //
+                    logInfo('Received task ID, starting polling', { taskId });
+                    // Polling Logic (copied from previous version)
+                    // const maxAttempts = 60;//
+                    // const pollInterval = 10000; // 10 seconds
+                    const maxAttempts = 40;
+                    const pollInterval = 20 * 1000; // 10 seconds
+                    let attempts = 0;
+                    let taskComplete = false;
+                    let finalDataFromPolling = null; // Use a separate variable inside the polling scope
+                    headers['x-root-trace-key'] = root_trace_key;
+                    while (attempts < maxAttempts && !taskComplete) {
+                        attempts++;
+                        logInfo(`Polling status API, attempt ${attempts}/${maxAttempts}`);
+                        if (attempts > 1)
+                            await sleep(pollInterval);
+                        try {
+                            const statusResponse = await context.fetch(`${host_base}${status_api_path_base}${taskId}`, {
+                                method: 'GET',
+                                headers: headers, // Reuse headers or create specific ones if needed
+                            }, 'api-key');
+                            if (!statusResponse.ok) {
+                                const errorText = await statusResponse.text();
+                                logInfo(`Status API call failed (attempt ${attempts}, non-OK status)`, { status: statusResponse.status, text: errorText });
+                                if (attempts === maxAttempts)
+                                    throw new Error(`状态查询失败 (尝试 ${attempts} 次): ${statusResponse.status} ${errorText}`);
+                                continue; // Try polling again
+                            }
+                            const statusRes = await statusResponse.json();
+                            logInfo(`Status API response (attempt ${attempts})`, { statusRes });
+                            // Adjust condition based on your API's success response structure
+                            if (statusRes.code === 200 && statusRes.data && statusRes.status === 'completed') {
+                                finalDataFromPolling = statusRes.data;
+                                taskComplete = true;
+                                logInfo('Task completed successfully via polling!');
+                            }
+                            else if ((statusRes.status === 'running' || statusRes.code !== 200) && attempts < maxAttempts) {
+                                logInfo(`Task still processing (attempt ${attempts})`);
+                            }
+                            else { // Task failed or timed out within API, or unexpected response
+                                logInfo(`Task failed or polling timed out (attempt ${attempts})`, { statusRes });
+                                throw new Error(`获取结果失败: ${statusRes.message || '任务处理超时或失败'}`);
+                            }
+                        }
+                        catch (pollError) {
+                            logInfo(`Error during status poll (attempt ${attempts})`, { error: pollError.message });
+                            if (attempts === maxAttempts)
+                                throw pollError; // Rethrow if max attempts reached
+                            // Optionally add delay before retrying after an error
+                            await sleep(1000);
+                        }
+                    } // End while loop
+                    if (!taskComplete || !finalDataFromPolling) {
+                        throw new Error('无法在规定时间内获取到媒体信息 (Polling timed out or failed)');
+                    }
+                    mediaData = finalDataFromPolling; // Assign successful polling result
                 }
-                return {
-                    code: block_basekit_server_api_1.FieldCode.Success,
-                    data: {
-                        id: mediaData.video_id || `${Date.now()}`,
-                        title: mediaData.title || '无标题',
-                        authorName: mediaData.author?.nickname || '未知作者',
-                        publishTime: mediaData.publish_time || new Date().toISOString(),
-                        playCount: mediaData.statistics?.play_count || 0,
-                        likeCount: mediaData.statistics?.like_count || 0,
-                        collectCount: mediaData.statistics?.collect_count || 0,
-                        shareCount: mediaData.statistics?.share_count || 0,
-                        commentCount: mediaData.statistics?.comment_count || 0,
-                        tags: tagsStr,
-                        coverUrl: mediaData.media?.cover_url || '',
-                        videoUrl: mediaData.media?.video_url || '',
-                        content: mediaData.content || '无内容',
-                        description: mediaData.description || '',
-                    },
-                };
+                else { // Initial request failed or didn't return task_id when expected
+                    logInfo('Error: Polling required but task_id not received or initial error', { res });
+                    throw new Error(`API 错误 (需要轮询但未获取 task_id): ${res.message || '无效的初始响应'}`);
+                }
             }
             else {
-                return {
-                    code: block_basekit_server_api_1.FieldCode.Error,
-                    msg: `API响应错误: ${res.message || '未知错误'}`,
-                };
+                // --- 4b. Scenario: Direct Data Expected ---
+                logInfo('Direct data scenario: extractText is false');
+                if (res.code === 200 && res.data) {
+                    logInfo('Received direct data successfully', { data: res.data });
+                    mediaData = res.data; // Assign direct data
+                }
+                else { // Direct request failed or didn't return data when expected
+                    logInfo('Error: Expected direct data but not received or API error', { res });
+                    throw new Error(`API 错误 (预期直接数据): ${res.message || '无效响应或缺少数据'}`);
+                }
             }
+            // --- 5. Process Final Data (Common Logic) ---
+            if (!mediaData) {
+                // This case should ideally be prevented by the logic above throwing errors
+                logInfo('Critical Error: mediaData is null after processing branches');
+                throw new Error('未能通过任何方式检索到媒体数据。');
+            }
+            logInfo('Processing final mediaData', { mediaData });
+            let tagsStr = '';
+            if (mediaData.tags && Array.isArray(mediaData.tags)) {
+                tagsStr = mediaData.tags.join(', ');
+            }
+            // Map final mediaData to the resultType structure
+            const result = {
+                id: mediaData.video_id || mediaData.id || `${Date.now()}`, // Use appropriate ID field from API response
+                title: mediaData.title || '无标题',
+                authorName: mediaData.author?.nickname || mediaData.author_name || '未知作者', // Check API response fields
+                description: mediaData.description || '',
+                publishTime: mediaData.publish_time ? new Date(mediaData.publish_time).toISOString() : null, // Handle potential time formats
+                likeCount: mediaData.statistics?.like_count ?? mediaData.like_count ?? 0, // Check alternative field names
+                collectCount: mediaData.statistics?.collect_count ?? mediaData.collect_count ?? 0,
+                shareCount: mediaData.statistics?.share_count ?? mediaData.share_count ?? 0,
+                commentCount: mediaData.statistics?.comment_count ?? mediaData.comment_count ?? 0,
+                tags: tagsStr,
+                coverUrl: mediaData.media?.cover_url ?? mediaData.cover_url ?? '',
+                videoUrl: mediaData.media?.video_url ?? mediaData.video_url ?? '',
+                content: mediaData.content || '', //文案字段
+            };
+            logInfo('Final result prepared', { result });
+            return {
+                code: block_basekit_server_api_1.FieldCode.Success,
+                data: result,
+            };
         }
         catch (e) {
-            console.error('请求失败:', e);
+            // Catch errors from fetch, json parsing, polling logic, or thrown errors
+            logInfo('Execution failed with error', { error: e.message, stack: e.stack });
             return {
                 code: block_basekit_server_api_1.FieldCode.Error,
-                msg: `请求失败: ${e.message}`
+                msg: `执行捷径时出错: ${e.message}` // Return the error message
             };
         }
     },
 });
 exports.default = block_basekit_server_api_1.basekit;
-//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiaW5kZXguanMiLCJzb3VyY2VSb290IjoiIiwic291cmNlcyI6WyIuLi8uLi8uLi9zcmMvaW5kZXgudHMiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6Ijs7QUFBQSxtRkFBOEg7QUFDOUgsTUFBTSxFQUFFLENBQUMsRUFBRSxHQUFHLGdDQUFLLENBQUM7QUFFcEIsMkJBQTJCO0FBQzNCLG9EQUFvRDtBQUNwRCxrQ0FBTyxDQUFDLGFBQWEsQ0FBQyxDQUFDLGNBQWMsQ0FBQyxDQUFDLENBQUM7QUFFeEMsa0NBQU8sQ0FBQyxRQUFRLENBQUM7SUFDZixPQUFPLEVBQUU7UUFDUCxpQkFBaUIsRUFBRSxJQUFJLEVBQUUsU0FBUztLQUNuQztJQUNELFNBQVMsRUFBRTtRQUNUO1lBQ0UsR0FBRyxFQUFFLEtBQUs7WUFDVixLQUFLLEVBQUUsTUFBTTtZQUNiLFNBQVMsRUFBRSx5Q0FBYyxDQUFDLFdBQVc7WUFDckMsS0FBSyxFQUFFO2dCQUNMLFdBQVcsRUFBRSxDQUFDLG9DQUFTLENBQUMsSUFBSSxDQUFDO2FBQzlCO1lBQ0QsU0FBUyxFQUFFO2dCQUNULFFBQVEsRUFBRSxJQUFJO2FBQ2Y7U0FDRjtLQUNGO0lBRUQsY0FBYztJQUNkLFVBQVUsRUFBRTtRQUNWLElBQUksRUFBRSxvQ0FBUyxDQUFDLE1BQU07UUFDdEIsS0FBSyxFQUFFO1lBQ0wsSUFBSSxFQUFFO2dCQUNKLEtBQUssRUFBRSw2RUFBNkU7YUFDckY7WUFDRCxVQUFVLEVBQUU7Z0JBQ1Y7b0JBQ0UsR0FBRyxFQUFFLElBQUk7b0JBQ1QsWUFBWSxFQUFFLElBQUk7b0JBQ2xCLElBQUksRUFBRSxvQ0FBUyxDQUFDLElBQUk7b0JBQ3BCLEtBQUssRUFBRSxJQUFJO29CQUNYLE1BQU0sRUFBRSxJQUFJO2lCQUNiO2dCQUNEO29CQUNFLEdBQUcsRUFBRSxPQUFPO29CQUNaLElBQUksRUFBRSxvQ0FBUyxDQUFDLElBQUk7b0JBQ3BCLEtBQUssRUFBRSxJQUFJO29CQUNYLE9BQU8sRUFBRSxJQUFJO2lCQUNkO2dCQUNE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
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiaW5kZXguanMiLCJzb3VyY2VSb290IjoiIiwic291cmNlcyI6WyIuLi8uLi8uLi9zcmMvaW5kZXgudHMiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6Ijs7QUFBQSxtRkFBK0g7QUFDL0gsTUFBTSxFQUFFLENBQUMsRUFBRSxHQUFHLGdDQUFLLENBQUM7QUFFcEIsZ0VBQWdFO0FBQ2hFLG9EQUFvRDtBQUNwRCwyQ0FBMkM7QUFDM0Msa0NBQU8sQ0FBQyxhQUFhLENBQUMsQ0FBQyxXQUFXLENBQUMsQ0FBQyxDQUFDLENBQUMscUNBQXFDO0FBRTNFLDJCQUEyQjtBQUMzQixNQUFNLEtBQUssR0FBRyxDQUFDLEVBQUUsRUFBRSxFQUFFLENBQUMsSUFBSSxPQUFPLENBQUMsT0FBTyxDQUFDLEVBQUUsQ0FBQyxVQUFVLENBQUMsT0FBTyxFQUFFLEVBQUUsQ0FBQyxDQUFDLENBQUM7QUFDdEUsU0FBUyxPQUFPLENBQUMsT0FBTyxFQUFFLElBQUksR0FBRyxFQUFFO0lBQ2pDLDhEQUE4RDtJQUM5RCxPQUFPLENBQUMsR0FBRyxDQUFDLElBQUksQ0FBQyxTQUFTLENBQUMsRUFBRSxPQUFPLEVBQUUsR0FBRyxJQUFJLEVBQUUsRUFBRSxJQUFJLEVBQUUsQ0FBQyxDQUFDLENBQUMsQ0FBQztBQUM3RCxDQUFDO0FBRUQsbUNBQW1DO0FBQ25DLGtDQUFPLENBQUMsUUFBUSxDQUFDO0lBQ2YsT0FBTyxFQUFFO1FBQ1AsaUJBQWlCLEVBQUUsSUFBSSxFQUFFLHNCQUFzQjtLQUNoRDtJQUNELFNBQVMsRUFBRTtRQUNUO1lBQ0UsR0FBRyxFQUFFLEtBQUs7WUFDVixLQUFLLEVBQUUsTUFBTTtZQUNiLFNBQVMsRUFBRSx5Q0FBYyxDQUFDLFdBQVc7WUFDckMsS0FBSyxFQUFFO2dCQUNMLFdBQVcsRUFBRSxDQUFDLG9DQUFTLENBQUMsSUFBSSxDQUFDLEVBQUUsaUNBQWlDO2FBQ2pFO1lBQ0QsU0FBUyxFQUFFO2dCQUNULFFBQVEsRUFBRSxJQUFJO2FBQ2Y7U0FDRjtLQUNGO0lBQ0QsVUFB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
