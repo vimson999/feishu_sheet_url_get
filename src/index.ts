@@ -4,7 +4,8 @@ const { t } = field;
 // --- Domain Whitelist (Keep commented lines for debugging) ---
 // basekit.addDomainList(['www.xiaoshanqing.tech']);
 // basekit.addDomainList(['121.4.126.31']);
-basekit.addDomainList(['127.0.0.1']); // Currently active for local testing
+// basekit.addDomainList(['127.0.0.1']); // Currently active for local testing
+basekit.addDomainList(['42.192.40.44','127.0.0.1']); // Currently active for local testing
 
 // --- Helper Functions ---
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -115,7 +116,8 @@ basekit.addField({
 
     // --- 2. Prepare API Request Details ---
     // Use the currently active domain from the whitelist
-    const activeDomain = 'http://127.0.0.1:8083'; // Fallback just in case
+    // const activeDomain = 'http://127.0.0.1:8083'; // Fallback just in case
+    const activeDomain = 'http://42.192.40.44:8083'
     const host_base = activeDomain.startsWith('http') ? activeDomain : `http://${activeDomain}`; // Ensure protocol
     const extract_api_path = '/api/media/extract';
     const status_api_path_base = '/api/media/extract/status/'; // Base path for status
@@ -189,7 +191,7 @@ basekit.addField({
           // const maxAttempts = 60;//
           // const pollInterval = 10000; // 10 seconds
 
-          const maxAttempts = 40;
+          const maxAttempts = 30;
           const pollInterval = 20 * 1000; // 10 seconds
           let attempts = 0;
           let taskComplete = false;
