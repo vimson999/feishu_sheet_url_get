@@ -53,7 +53,14 @@ basekit.addField({
         { key: 'tags', type: FieldType.Text, title: '标签' },
         { key: 'coverUrl', type: FieldType.Text, title: '封面地址' },
         { key: 'videoUrl', type: FieldType.Text, title: '视频下载地址' },
-        { key: 'content', type: FieldType.Text, title: '文案' }, // Included extracted text/content
+        { key: 'content', type: FieldType.Text, title: '文案原文' }, // Included extracted text/content
+        { key: 'core', type: FieldType.Text, title: '爆款视角 · 核心洞察' },
+        { key: 'formula', type: FieldType.Text, title: '解构爆款 · 增长范式' },
+        { key: 'golden3s', type: FieldType.Text, title: '黄金3秒 · 夺目开局策划' },
+        { key: 'copywriting', type: FieldType.Text, title: '小红书流量文案' },
+        { key: 'duration', type: FieldType.Number, title: '视频时长' },
+        { key: 'total_required', type: FieldType.Number, title: '消耗积分' },
+        // { key: 'user_available_points', type: FieldType.Number, title: '剩余积分' },
       ],
     },
   },
@@ -308,6 +315,13 @@ basekit.addField({
         coverUrl: mediaData.media?.cover_url ?? mediaData.cover_url ?? '',
         videoUrl: mediaData.media?.video_url ?? mediaData.video_url ?? '',
         content: mediaData.content || '', //文案字段
+        core: mediaData.ai_assistant_text.core || '', 
+        formula: mediaData.ai_assistant_text.formula || '', 
+        golden3s: mediaData.ai_assistant_text.golden3s || '', 
+        copywriting: mediaData.ai_assistant_text.copywriting || '', 
+        duration: mediaData.media.duration || 0, 
+        total_required: mediaData.points.total_required || 0,  
+        // user_available_points: mediaData.points.user_available_points || 0, 
       };
       logInfo('准备最终返回值---Final result prepared', { result });
 
