@@ -124,8 +124,8 @@ basekit.addField({
 
     // --- 2. Prepare API Request Details ---
     // Use the currently active domain from the whitelist
-    const activeDomain = 'http://127.0.0.1:8083'; // Fallback just in case
-    // const activeDomain = 'http://42.192.40.44:8083'
+    // const activeDomain = 'http://127.0.0.1:8083'; // Fallback just in case
+    const activeDomain = 'http://42.192.40.44:8083'
     const host_base = activeDomain.startsWith('http') ? activeDomain : `http://${activeDomain}`; // Ensure protocol
     const extract_api_path = '/api/media/extract';
     const status_api_path_base = '/api/media/extract/status/'; // Base path for status
